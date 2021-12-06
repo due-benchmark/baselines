@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Tuple
 
 import pytorch_lightning as pl
 import torch
+from pytorch_lightning.plugins.ddp_plugin import DDPPlugin
 
 from benchmarker.cli.l5.common.callbacks import (
     CustomProgressBar,
@@ -108,8 +109,13 @@ def get_generic_trainer(model: L5GenerationModule, datamodule: L5DataModule, arg
     else:
         resume_from_checkpoint = None
 
-    train_params = {"accumulate_grad_batches": args.accumulate_grad_batches,
-                    "replace_sampler_ddp": len(args.data_dir) == 1}
+    train_params = {'accumulate_grad_batches': args.accumulate_grad_batches,
+        'replace_sampler_ddp': len(args.data_dir) == 1, 'plugins': None}
+
+    if args.accelerator == 'ddp':
+        # See https://applica.atlassian.net/browse/AA-751
+        # or https://pytorch-lightning.readthedocs.io/en/1.3.8/benchmarking/performance.html for details
+        train_params['plugins'] = [DDPPlugin(find_unused_parameters=False)]
 
     trainer = pl.Trainer.from_argparse_args(
         args,

@@ -35,6 +35,7 @@ class L5GenerationModule(BaseLightningModule):
             "context_residual",
             "truncate_decoder_after_layer",
             "truncate_encoder_after_layer",
+            "gradient_checkpointing",
         )
 
         # Args originally not present in config object
@@ -349,6 +350,13 @@ class L5GenerationModule(BaseLightningModule):
             type=int,
             default=None,
             help="Overwrite number of encoder layers in pretrained model",
+        )
+        parser.add_argument(
+            "--gradient_checkpointing",
+            action="store_true",
+            default=False,
+            help='Use gradient checkpointing (multi-head attention activations are not saved, but recalculated in backward pass).'
+            'Reduces memory usage about 2.5 times and slows training by about 15% (still worth it e.g. bigger batch size).',
         )
 
         return parser
