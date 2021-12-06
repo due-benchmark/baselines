@@ -7,10 +7,9 @@ from typing import Dict, Iterator, List, Set, Tuple, Union
 
 import pandas as pd
 
-from lambert_lm.data.document import Doc2d
-from lambert_lm.data.reader.common import Dataset, Document
-from lambert_lm.data.reader.utils import get_doc2d
-from lambert_lm.input_loader.common_format import CommonFormatLoader
+from benchmarker.data.document import Doc2d
+from benchmarker.data.reader.common import Dataset, Document
+from benchmarker.input_loader.common_format import CommonFormatLoader
 
 logger = logging.getLogger(__name__)
 
