@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 from torch import Tensor
+from torch.utils.checkpoint import checkpoint
 from transformers import T5Config, T5PreTrainedModel
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 from transformers.models.t5.modeling_t5 import T5Block, T5ForConditionalGeneration, T5LayerNorm
