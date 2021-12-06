@@ -1,11 +1,16 @@
 import json
 import logging
 import os
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Iterator, List, Union
+from typing import Dict, Iterator, List, Set, Tuple, Union
 
-from benchmarker.data.reader.common import Dataset, Document
-from benchmarker.input_loader.common_format import CommonFormatLoader
+import pandas as pd
+
+from lambert_lm.data.document import Doc2d
+from lambert_lm.data.reader.common import Dataset, Document
+from lambert_lm.data.reader.utils import get_doc2d
+from lambert_lm.input_loader.common_format import CommonFormatLoader
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +22,12 @@ def get_value(annotation_value: Dict) -> List:
         return [annotation_value['value']]
 
 
-def get_children_values(annotation_values: List[Dict]) -> List:
+def get_child_values(annotation_values: List[Dict]) -> List:
     values: List = []
     for annotation_value in annotation_values:
-        values += get_value(annotation_value)
+        values += [annotation_value['value']]
 
-    return sorted(values)
+    return values
 
 
 class BenchmarkDataset(Dataset):
@@ -59,15 +64,17 @@ class BenchmarkDataset(Dataset):
                 doc2d.seg_data['lazyimages'] = {'path': img_dir}
 
                 for annotation in doc_dict['annotations']:
-                    annotations = {}
+                    annotations = defaultdict(list)
                     question = annotation['key']
 
                     values = []
                     for i, value in enumerate(annotation['values']):
                         if 'children' in value:
+                            # XXX: this part could be specific to PWC dataset and might need some changes
+                            # for different datasets with 'children' keys
                             for child in value['children']:
-                                child_question = f"{question}_{i}: {child['key']}"
-                                annotations[child_question] = get_children_values(child['values'])
+                                child_question = f"What are the {question} values for the {child['key']} column?"
+                                annotations[child_question] += get_child_values(child['values'])
                         else:
                             values += get_value(value)
 
@@ -97,3 +104,4 @@ class BenchmarkCorpusMixin:
         for split in ['train', 'dev', 'test']:
             inner_attribute = '_' + split
             setattr(self, inner_attribute, BenchmarkDataset(directory, split, **kwargs))
+
