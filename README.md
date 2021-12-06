@@ -40,7 +40,7 @@ In order to process datasets into memmaps, set the directory `downloaded_data_pa
 ```bash
 ./create_memmaps.sh
 ```
-# 2.2 Run training script
+## 2.2 Run training script
 Single training can be started with the following command, assuming `out_dir` is set as an output for the trained model's checkpoints and generated outputs.
 Additionally, set `datas` to any of the previously generated datasets (e.g., to `DeepForm`). 
 ```bash
