@@ -51,18 +51,24 @@ The structure of the directory for each of the dataset is like in the following 
         └── documents_content.jsonl
 ```
 
-## 1.1 Download pdf files (for training)
+## 1.1 Download pdf files (optional)
 The pdf files are also stored on the website. Please download and unpack them in case you need to train you own models.
 Please note that for our baselines and some simple advancements all the neccessary OCR information is already provided in the previously downloaded `document_content.jsonl`.
 
 # 2. Run baseline trainings
+
 ## 2.1 Process datasets into memmaps (binarization)
-In order to process datasets into memmaps, set the directory `downloaded_data_path` to downloaded data,
- set `memmap_directory` to a new directory that will store binarized datas, and use the following script:
-```bash
-./create_memmaps.sh
-```
+
+Instead of processing input data batch by batch, epoch after epoch, we assume some intermediate step that consists of tokenization, input tensors' preparation, and storing such data in a binarized form.
+
+To process datasets into the said 'memmaps,' two variables in the `create_memmaps.sh` files must be set: `DATASETS_ROOT`, and `TOKENIZER`. The former provides the path to the directory where all of the datasets are downloaded and unpacked. The latter is a path to model dump used to perform the tokenization process. Every of our baseline uses the T5 model as a backbone. Thus it can be a patch to arbitrary model downloaded from our [Datasets and Baselines](http://duebenchmark.com/data) page, e.g., the `T5-large`. Similarly, the model has to be unpacked before performing the binarization.
+
+By default, the `create_memmaps.sh`, assumes that we are about to process every dataset from the DUE benchmark, using all available OCR layers and limit on input sequence length equivalent to those from our experiments.
+
+Long story short, set `DATASETS_ROOT` and `TOKENIZER`, then run `./create_memmaps.sh`.
+
 ## 2.2 Run training script
+
 Single training can be started with the following command, assuming `out_dir` is set as an output for the trained model's checkpoints and generated outputs.
 Additionally, set `datas` to any of the previously generated datasets (e.g., to `DeepForm`). 
 ```bash
