@@ -18,94 +18,89 @@ sudo userdocker run nvcr.io/nvidia/pytorch:20.12-py3
 Clone the repo with:
 ```bash
 git clone git@github.com:due-benchmark/baselines.git
+git clone git@github.com:due-benchmark/evaluator.git
+
 ```
 
 Install the requirements:
 ```bash
-pip install -e .
+cd evaluator && pip install -e .
+cd ../baselines && pip install -e .
 ```
 
 # 1. Download datasets and the base model
 The datasets are re-hosted on the https://duebenchmark.com/data and can be downloaded from there. 
 Moreover, since the baselines are finetuned based on the T5 model, you need to download the original model. 
 Again it is re-hosted at https://duebenchmark.com/data. 
-Please place it into the `due_benchmark_data` directory after downloading.
-
-
-# TODO: dopisać resztę
-# 2. Run baseline trainings
-## 2.1 Process datasets into memmaps (binarization)
-In order to process datasets into memmaps, set the directory `downloaded_data_path` to downloaded data,
- set `memmap_directory` to a new directory that will store binarized datas, and use the following script:
+Please place it into the `due_benchmark_data` directory after downloading.\
+The structure of the directory for each of the dataset is like in the following example:
 ```bash
-./create_memmaps.sh
+└── KleisterCharity
+    ├── dev
+    │   ├── document.jsonl
+    │   └── documents_content.jsonl
+    ├── document.jsonl
+    ├── documents.json
+    ├── documents.jsonl
+    ├── documents_content.jsonl
+    ├── test
+    │   ├── document.jsonl
+    │   └── documents_content.jsonl
+    └── train
+        ├── document.jsonl
+        └── documents_content.jsonl
 ```
+
+## 1.1 Download pdf files (optional)
+The pdf files are also stored on the website. Please download and unpack them in case you need to train you own models.
+Please note that for our baselines and some simple advancements all the neccessary OCR information is already provided in the previously downloaded `document_content.jsonl`.
+
+# 2. Run baseline trainings
+
+## 2.1 Process datasets into memmaps (binarization)
+
+Instead of processing input data batch by batch, epoch after epoch, we assume some intermediate step that consists of tokenization, input tensors' preparation, and storing such data in a binarized form.
+
+To process datasets into the said 'memmaps,' two variables in the `create_memmaps.sh` files must be set: `DATASETS_ROOT`, and `TOKENIZER`. The former provides the path to the directory where all of the datasets are downloaded and unpacked. The latter is a path to model dump used to perform the tokenization process. Every of our baseline uses the T5 model as a backbone. Thus it can be a patch to arbitrary model downloaded from our [Datasets and Baselines](http://duebenchmark.com/data) page, e.g., the `T5-large`. Similarly, the model has to be unpacked before performing the binarization.
+
+By default, the `create_memmaps.sh`, assumes that we are about to process every dataset from the DUE benchmark, using all available OCR layers and limit on input sequence length equivalent to those from our experiments.
+
+Long story short, set `DATASETS_ROOT` and `TOKENIZER`, then run `./create_memmaps.sh`.
+
 ## 2.2 Run training script
+
 Single training can be started with the following command, assuming `out_dir` is set as an output for the trained model's checkpoints and generated outputs.
 Additionally, set `datas` to any of the previously generated datasets (e.g., to `DeepForm`). 
 ```bash
-python benchmarker/cli/l5/train.py \
-    --model_name_or_path ${downloaded_data_path}/t5-base \
-    --relative_bias_args="[{\"type\":\"1d\"}]" \
-    --dropout_rate 0.15 \
-    --model_type=t5 \
-    --output_dir ${out_dir} \
-    --data_dir ${memmap_directory}/${datas}_memmap/train \
-    --val_data_dir ${memmap_directory}/${datas}_memmap/dev \
-    --test_data_dir ${memmap_directory}/${datas}_memmap/test \
-    --gpus 1 \
-    --max_epochs 30 \
-    --train_batch_size 1 \
-    --eval_batch_size 2 \
-    --overwrite_output_dir \
-    --accumulate_grad_batches 64 \
-    --max_source_length 1024 \
-    --max_target_length 256 \
-    --eval_max_gen_length 16 \
-    --learning_rate 2e-4 \
-    --lr_scheduler constant \
-    --warmup_steps 100 \
-    --trim_batches \ 
-    --do_train \
-    --do_predict \ 
-    --additional_data_fields doc_id label_name \
-    --early_stopping_patience 20 \
-    --segment_levels tokens pages \
-    --optimizer adamw \
-    --weight_decay 1e-5 \
-    --adam_epsilon 1e-8 \
-    --num_workers 4 \
-    --val_check_interval 1
+/path_to_training_script.sh
+output results to ${generated_outs}
 ```
 The models presented in the paper differs only in two places. The first is the choice of `--relative_bias_args`.
-T5 uses	`[{'type': '1d'}]` whereas both `+2D` and `+DALL-E` use 	`[{'type': '1d'}, {'type': 'horizontal'}, {'type': 'vertical'}]`
-
-Moreover `+DALL-E` had `--context_embeddings` set to `[{'dimension': 1024, 'use_position_bias': False, 'embedding_type': 'discrete_vae', 'pretrained_path': '', 'image_width': 256, 'image_height': 256}]`
+T5 uses	`[{'type': '1d'}]` whereas `+2D` use `[{'type': '1d'}, {'type': 'horizontal'}, {'type': 'vertical'}]`
 
 # 3. Evaluate
 ## 3.1 Convert output to the submission file
 In order to compare two files (generated by the model with the provided library and the gold-truth answers), one has to convert the generated output into a format that can be directly compared with `documents.jsonl`.
 Please use:
 ```bash
-python to_submission_file.py ${downloaded_data_path} ${out_dir}
+python postprocessors/converter.py \
+--test_generation ${generated_outs}/test_generations.txt \
+--reference_path  ${downloaded_data_path}/KleisterCharity/test/document.jsonl \
+--outpath ${generated_outs}/converted_test_generations.txt
 ```
+For PWC dataset use a different postprocessor (available in the path `postprocessors/converter_pwc.py`)
 
 ## 3.2 Evaluate reproduced models
 Finally outputs can be evaluated using the provided evaluator. 
-First, get back into main directory, where this README.md is placed and install it by ```cd due_evaluator-master && pip install -r requirement```
-And run:
+Assuming the evaluator was previously installed, its documentation can be accessed by using the `deval --help`.
+To generate scores run:
 ```bash
-python due_evaluator --out-files baselines/test_generations.jsonl --reference ${downloaded_data_path}/DeepForm
+deval --out-files ${generated_outs}/converted_test_generations.txt \
+ --reference ${downloaded_data_path}/KleisterCharity/test/document.jsonl \
+  -m F1 -i
 ```
 
-## 3.3 Evaluate baseline outputs
-We provide an examples of outputs generated by our baseline (DeepForm). They should be processed with:
-```bash
-python benchmarker-code/to_submission_file.py ${downloaded_data_path}/model_outputs_example ${downloaded_data_path}
-python due_evaluator --out-files ./benchmarker/cli/l5/baselines/test_generations.txt.jsonl --reference ${downloaded_data_path}/DeepForm/test/document.jsonl
-```
-
-The expected output should be:
+The expected output should be formatted roughtly like the following table:
 ```bash
        Label       F1  Precision   Recall
   advertiser 0.512909   0.513793 0.512027
