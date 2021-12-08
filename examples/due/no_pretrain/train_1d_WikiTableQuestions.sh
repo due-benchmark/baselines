@@ -32,7 +32,6 @@ PYTHONPATH="." CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 benchmarker/cli/l5/train.py 
 --optimizer adamw \
 --weight_decay 1e-5 \
 --adam_epsilon 1e-8 \
---output_dir ${OUT_DIR}
 --seed 4 \
 --gradient_checkpointing \
 --trim_batches \
