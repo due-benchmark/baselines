@@ -4,7 +4,7 @@ DATASETS_ROOT="/data-c/shared/athena/datasets/public/challenges_benchmark_paper"
 TOKENIZER="/data-c/shared/athena/models/hf/t5-base"
 MAX_LENGTHS=(1024 6144 6144 1024 4096 1024 6144)
 TRAIN_STRATEGIES=(all_items concat all_items all_items concat all_items all_items)
-DATASETS=(docvqa AxCell DeepForm TabFact WikiTableQuestions infographics_vqa kleister-charity)
+DATASETS=(DocVQA PWC DeepForm TabFact WikiTableQuestions InfographicsVQA KleisterCharity)
 OCRS=(microsoft_cv tesseract djvu)
 
 
