@@ -1,10 +1,10 @@
 import os
+import gzip
 
 from tqdm import tqdm
 from boto3 import client
 from botocore import UNSIGNED
 from botocore.client import Config
-import gzip
 
 BUCKET_NAME = 'edu.ucsf.industrydocuments.artifacts'
 TARGET_PATH = 'pdf'
