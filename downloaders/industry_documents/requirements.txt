@@ -1,0 +1,4 @@
+botocore
+boto3
+tqdm
+
